@@ -1,0 +1,21 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t statusboard-api:ci ./api
+      - name: Build Web image
+        run: docker build -t statusboard-web:ci ./web
+      - name: Smoke test API
+        run: |
+          docker run -d --name api -e DATABASE_URL="postgresql://postgres:postgres@db:5432/postgres" -p 8000:8000 statusboard-api:ci
+          sleep 5
+          curl --fail http://localhost:8000/health || exit 1
